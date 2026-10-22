@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>スポッと快感！リアルたんぽぽ抜きシミュレーター</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
             width: 100vw;
             height: 100dvh;
             overflow: hidden;
-            touch-action: none;
+            touch-action: manipulation;
             font-family: 'M PLUS Rounded 1c', sans-serif;
             background-color: #3e2723;
             display: flex;
@@ -47,6 +47,14 @@
             width: 100%;
             height: 100%;
             cursor: grab;
+            touch-action: none;
+        }
+        #gameCanvas:focus {
+            outline: none;
+        }
+        #gameCanvas:focus-visible {
+            outline: 3px solid #fbbf24;
+            outline-offset: -3px;
         }
         #gameCanvas:active {
             cursor: grabbing;
@@ -77,6 +85,7 @@
         .modal-card {
             animation: popModal 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+
     </style>
 </head>
 <body>
@@ -85,70 +94,74 @@
          ROW 1: 上部ヘッダー（ステータス表示 ＆ 2段ボタン配置）
          ========================================================================= -->
     <header id="top-header">
-        <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
-            
-            <!-- 左側：スコア・水分・ほぐれ度・テンションゲージ -->
-            <div class="flex flex-col gap-1 flex-1 min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <span id="plantNameBadge" class="bg-amber-800 text-amber-50 text-[11px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full truncate">
-                        🌼 セイヨウタンポポ
-                    </span>
-                    <span class="text-[11px] sm:text-xs font-extrabold text-emerald-950 bg-emerald-200/80 px-2 py-0.5 rounded-full">
-                        抜いた数: <span id="pullCountText">0</span>本
-                    </span>
-                    <span class="text-[11px] sm:text-xs font-extrabold text-amber-950 bg-amber-200/90 px-2 py-0.5 rounded-full">
-                        最高: <span id="bestRecordText">0.0</span>cm
-                    </span>
-                </div>
+        <div class="max-w-4xl mx-auto flex flex-col gap-1">
 
-                <!-- 3つのミニゲージ（水分・ほぐれ・テンション） -->
-                <div class="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-md">
-                    <!-- 水分 -->
-                    <div class="bg-white/80 rounded-lg px-1.5 py-0.5 border border-sky-300">
-                        <div class="flex justify-between text-[10px] font-extrabold text-sky-900">
-                            <span>💧水分</span>
-                            <span id="moisturePct">25%</span>
-                        </div>
-                        <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                            <div id="moistureBar" class="bg-sky-400 h-full gauge-fill" style="width: 25%"></div>
-                        </div>
-                    </div>
-                    <!-- ほぐれ -->
-                    <div class="bg-white/80 rounded-lg px-1.5 py-0.5 border border-amber-300">
-                        <div class="flex justify-between text-[10px] font-extrabold text-amber-900">
-                            <span>⛏️ほぐれ</span>
-                            <span id="loosenPct">0%</span>
-                        </div>
-                        <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                            <div id="loosenBar" class="bg-amber-500 h-full gauge-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <!-- テンション（ちぎれそう度） -->
-                    <div class="bg-white/80 rounded-lg px-1.5 py-0.5 border border-rose-300">
-                        <div class="flex justify-between text-[10px] font-extrabold text-rose-900">
-                            <span>⚡ちぎれ度</span>
-                            <span id="tensionPct">0%</span>
-                        </div>
-                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div id="tensionBar" class="bg-emerald-400 h-full gauge-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
+            <!-- 1行目：品種・記録バッジ（ヘッダー幅いっぱい使い、折り返さないので高さが変わらない） -->
+            <div class="flex items-center gap-1.5 flex-nowrap min-w-0">
+                <span id="plantNameBadge" class="bg-amber-800 text-amber-50 text-[11px] sm:text-xs font-extrabold px-2 py-0.5 rounded-full truncate min-w-0 shrink">
+                    🌼 セイヨウタンポポ
+                </span>
+                <span class="text-[11px] sm:text-xs font-extrabold text-emerald-950 bg-emerald-200/80 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                    <span class="sr-only sm:not-sr-only">抜いた数: </span><span class="sm:hidden" aria-hidden="true">🌱</span><span id="pullCountText">0</span>本
+                </span>
+                <span class="text-[11px] sm:text-xs font-extrabold text-amber-950 bg-amber-200/90 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                    <span class="sr-only sm:not-sr-only">最高: </span><span class="sm:hidden" aria-hidden="true">🏆</span><span id="bestRecordText">0.0</span>cm
+                </span>
             </div>
 
-            <!-- 右側：ご要望通りの2段構成ボタン（上段：ずかん・コツ ／ 下段：土のなか） -->
-            <div class="flex flex-col gap-1 shrink-0">
-                <div class="flex gap-1">
-                    <button id="openZukanBtn" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-amber-950 font-extrabold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow border-b-2 border-amber-700 flex items-center gap-1">
-                        <span>📖</span><span>ずかん</span>
-                    </button>
-                    <button id="openHelpBtn" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow border-b-2 border-emerald-800 flex items-center gap-1">
-                        <span>❓</span><span>コツ</span>
+            <!-- 2行目：左に水分・ほぐれ度・テンションゲージ、右にボタン -->
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex-1 min-w-0">
+
+                    <!-- 3つのミニゲージ（水分・ほぐれ・テンション） -->
+                    <div class="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-md">
+                        <!-- 水分 -->
+                        <div class="bg-white/80 rounded-lg px-1.5 py-0.5 border border-sky-300">
+                            <div class="flex justify-between text-[10px] font-extrabold text-sky-900">
+                                <span>💧水分</span>
+                                <span id="moisturePct">25%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="moistureBar" class="bg-sky-400 h-full gauge-fill" style="width: 25%"></div>
+                            </div>
+                        </div>
+                        <!-- ほぐれ -->
+                        <div class="bg-white/80 rounded-lg px-1.5 py-0.5 border border-amber-300">
+                            <div class="flex justify-between text-[10px] font-extrabold text-amber-900">
+                                <span>⛏️ほぐれ</span>
+                                <span id="loosenPct">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="loosenBar" class="bg-amber-500 h-full gauge-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <!-- テンション（ちぎれそう度） -->
+                        <div class="bg-white/80 rounded-lg px-1.5 py-0.5 border border-rose-300">
+                            <div class="flex justify-between text-[10px] font-extrabold text-rose-900">
+                                <span>⚡ちぎれ度</span>
+                                <span id="tensionPct">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div id="tensionBar" class="bg-emerald-400 h-full gauge-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：ご要望通りの2段構成ボタン（上段：ずかん・コツ ／ 下段：土のなか） -->
+                <div class="flex flex-col gap-1 shrink-0">
+                    <div class="flex gap-1">
+                        <button id="openZukanBtn" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-amber-950 font-extrabold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow border-b-2 border-amber-700 flex items-center gap-1">
+                            <span>📖</span><span>ずかん</span>
+                        </button>
+                        <button id="openHelpBtn" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow border-b-2 border-emerald-800 flex items-center gap-1">
+                            <span>❓</span><span>コツ</span>
+                        </button>
+                    </div>
+                    <button id="xrayToggleBtn" aria-pressed="true" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-extrabold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow border-b-2 border-indigo-800 flex items-center justify-center gap-1 w-full">
+                        <span>🔍</span><span id="xrayBtnLabel">土のなか：みえる</span>
                     </button>
                 </div>
-                <button id="xrayToggleBtn" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-extrabold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow border-b-2 border-indigo-800 flex items-center justify-center gap-1 w-full">
-                    <span>🔍</span><span id="xrayBtnLabel">土のなか：みえる</span>
-                </button>
             </div>
 
         </div>
@@ -158,7 +171,11 @@
          ROW 2: 中央プレイ領域（たんぽぽ描画キャンバス・文字被り一切なし）
          ========================================================================= -->
     <main id="canvas-wrapper">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" tabindex="0" role="application" aria-label="たんぽぽ抜きのプレイ画面" aria-describedby="canvasHelp"></canvas>
+        <p id="canvasHelp" class="sr-only">
+            キーボードでも遊べます。1・2・3で道具（つかむ・じょうろ・くさぬき）を選び、スペースキーを押しているあいだ道具を使います。
+            押したまま矢印キーで動かします（Shiftで細かく）。つかむでは左右に揺らしてから上へ引っぱります。Nでつぎの草です。
+        </p>
     </main>
 
     <!-- =========================================================================
@@ -167,21 +184,21 @@
     <footer id="bottom-bar">
         <div class="max-w-xl mx-auto flex flex-col gap-1.5">
             <!-- アドバイスバナー（下部バー内に固定されているためたんぽぽと絶対被らない） -->
-            <div id="advice-banner" class="bg-amber-950/90 text-amber-100 text-[11px] sm:text-xs font-bold py-1 px-3 rounded-full text-center border border-amber-500/40 truncate shadow-inner">
+            <div id="advice-banner" role="status" aria-live="polite" class="bg-amber-950/90 text-amber-100 text-[11px] sm:text-xs font-bold py-1 px-3 rounded-full text-center border border-amber-500/40 truncate shadow-inner">
                 💡 根元（クラウン）をつかんで左右にユサユサ揺らしてから真上に引っぱろう！
             </div>
 
             <!-- 道具ボタン列 -->
             <div class="grid grid-cols-4 gap-1.5 sm:gap-2.5">
-                <button data-tool="hand" class="tool-btn active bg-amber-100 hover:bg-white text-amber-950 py-1.5 px-2 rounded-2xl flex flex-col items-center justify-center border-b-4 border-amber-400">
+                <button data-tool="hand" aria-pressed="true" class="tool-btn active bg-amber-100 hover:bg-white text-amber-950 py-1.5 px-2 rounded-2xl flex flex-col items-center justify-center border-b-4 border-amber-400">
                     <span class="text-lg sm:text-xl leading-none">🖐️</span>
                     <span class="text-[10px] sm:text-xs font-extrabold mt-0.5">つかむ</span>
                 </button>
-                <button data-tool="water" class="tool-btn bg-sky-100 hover:bg-white text-sky-950 py-1.5 px-2 rounded-2xl flex flex-col items-center justify-center border-b-4 border-sky-400">
+                <button data-tool="water" aria-pressed="false" class="tool-btn bg-sky-100 hover:bg-white text-sky-950 py-1.5 px-2 rounded-2xl flex flex-col items-center justify-center border-b-4 border-sky-400">
                     <span class="text-lg sm:text-xl leading-none">🚿</span>
                     <span class="text-[10px] sm:text-xs font-extrabold mt-0.5">じょうろ</span>
                 </button>
-                <button data-tool="fork" class="tool-btn bg-orange-100 hover:bg-white text-orange-950 py-1.5 px-2 rounded-2xl flex flex-col items-center justify-center border-b-4 border-orange-400">
+                <button data-tool="fork" aria-pressed="false" class="tool-btn bg-orange-100 hover:bg-white text-orange-950 py-1.5 px-2 rounded-2xl flex flex-col items-center justify-center border-b-4 border-orange-400">
                     <span class="text-lg sm:text-xl leading-none">⛏️</span>
                     <span class="text-[10px] sm:text-xs font-extrabold mt-0.5">くさぬき</span>
                 </button>
@@ -196,7 +213,7 @@
     <!-- =========================================================================
          モーダル1: 抜けた！／途中で切れた！リザルト画面
          ========================================================================= -->
-    <div id="resultModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div class="modal-card bg-amber-50 border-4 border-amber-500 rounded-3xl max-w-sm w-full p-4 sm:p-5 text-center shadow-2xl flex flex-col items-center">
             <div id="resultBadge" class="bg-amber-400 text-amber-950 font-extrabold px-4 py-1 rounded-full text-sm sm:text-base shadow mb-1.5">
                 ✨ スポッと かんぜん勝利！ ✨
@@ -222,7 +239,7 @@
 
             <div class="flex gap-2 w-full">
                 <button id="regrowBtn" class="hidden flex-1 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-extrabold py-2.5 px-3 rounded-2xl border-b-4 border-amber-800 text-xs sm:text-sm">
-                    🌱 残った根から再生を見る
+                    🌱 残った根から再生させる
                 </button>
                 <button id="modalNextBtn" class="flex-1 bg-lime-500 hover:bg-lime-400 active:scale-95 text-lime-950 font-extrabold py-2.5 px-3 rounded-2xl border-b-4 border-lime-700 text-xs sm:text-sm">
                     🌼 つぎのたんぽぽへ
@@ -234,11 +251,11 @@
     <!-- =========================================================================
          モーダル2: たんぽぽ図鑑（localStorage保存対応）
          ========================================================================= -->
-    <div id="zukanModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div id="zukanModal" role="dialog" aria-modal="true" aria-labelledby="zukanTitle" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div class="modal-card bg-amber-50 border-4 border-amber-600 rounded-3xl max-w-md w-full max-h-[82dvh] flex flex-col overflow-hidden shadow-2xl">
             <div class="bg-amber-500 px-4 py-3 flex justify-between items-center border-b-2 border-amber-600">
-                <h2 class="text-base sm:text-lg font-extrabold text-amber-950">📖 ぬいた たんぽぽ図鑑</h2>
-                <button id="closeZukanBtn" class="bg-amber-800 text-white w-7 h-7 rounded-full font-extrabold text-sm flex items-center justify-center">✕</button>
+                <h2 id="zukanTitle" class="text-base sm:text-lg font-extrabold text-amber-950">📖 ぬいた たんぽぽ図鑑</h2>
+                <button id="closeZukanBtn" aria-label="図鑑を閉じる" class="bg-amber-800 text-white w-7 h-7 rounded-full font-extrabold text-sm flex items-center justify-center">✕</button>
             </div>
             <div id="zukanContent" class="p-3.5 overflow-y-auto flex-1 space-y-2"></div>
         </div>
@@ -247,9 +264,9 @@
     <!-- =========================================================================
          モーダル3: スポッと抜くコツ（あそびかた）
          ========================================================================= -->
-    <div id="helpModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div class="modal-card bg-white border-4 border-emerald-500 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl">
-            <h2 class="text-lg font-extrabold text-emerald-900 mb-2.5">🌱 リアルたんぽぽ抜きのコツ</h2>
+            <h2 id="helpTitle" class="text-lg font-extrabold text-emerald-900 mb-2.5">🌱 リアルたんぽぽ抜きのコツ</h2>
             <div class="space-y-2 text-xs text-slate-700 font-bold leading-relaxed">
                 <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
                     <span class="text-amber-900 font-extrabold block">① 花や葉っぱを強く引っぱらない！</span>
@@ -262,6 +279,10 @@
                 <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
                     <span class="text-emerald-900 font-extrabold block">③ 左右にユサユサ揺らしてから真上へ！</span>
                     根元をつかんで<span class="text-emerald-700">左右に揺らす</span>と、細い側根（ひげ根）がプチプチ外れて、先端まで「スポッ！」と気持ちよく抜けるよ！
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-slate-800 font-extrabold block">⌨️ キーボードでも遊べる！</span>
+                    プレイ画面を選んで、1・2・3 で道具、スペースを押したまま矢印キーで動かそう。N でつぎの草。
                 </div>
             </div>
             <button id="closeHelpBtn" class="mt-3.5 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2 rounded-2xl border-b-4 border-emerald-800 text-sm">
@@ -283,26 +304,46 @@
                 this.lastTickTime = 0;
                 this.lastWaterTime = 0;
                 this.lastFluffTime = 0;
+                this.lastForkTime = 0;
+                this.unsupported = false;
             }
 
-            unlock() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioCtx();
-                    // ホワイトノイズバッファ生成
-                    const len = this.ctx.sampleRate * 1.5;
-                    this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-                    const data = this.noiseBuf.getChannelData(0);
-                    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+            // AudioContext を用意する（未対応ブラウザでは null を返し、音なしで動き続ける）
+            ensure() {
+                if (this.ctx) return this.ctx;
+                if (this.unsupported) return null;
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) {
+                    this.unsupported = true;
+                    return null;
                 }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
+                try {
+                    this.ctx = new AudioCtx();
+                } catch (e) {
+                    this.unsupported = true;
+                    return null;
+                }
+                // ホワイトノイズバッファ生成
+                const len = this.ctx.sampleRate * 1.5;
+                this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+                const data = this.noiseBuf.getChannelData(0);
+                for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+                return this.ctx;
+            }
+
+            // ユーザー操作（タップ・クリック・キー）の中から呼ぶ。
+            // iOS の 'interrupted' を含め、'running' 以外ならすべて再開を試みる
+            unlock() {
+                const c = this.ensure();
+                if (c && c.state !== 'running') {
+                    const r = c.resume();
+                    if (r && r.catch) r.catch(() => {});
                 }
             }
 
             // ① 引っ張り中の「ギギギ…／ピキピキ」テンション音
             playStretchTick(tensionRatio = 0.5) {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
                 const interval = Math.max(0.045, 0.20 - tensionRatio * 0.14);
                 if (now - this.lastTickTime < interval) return;
@@ -327,7 +368,7 @@
 
             // ② 茎・葉・主根が「ブチッ！」とちぎれる繊維破断音
             playSnapSound() {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
 
                 // ノイズ破裂音
@@ -364,7 +405,7 @@
 
             // ③ 綿毛が風に舞う「フワッ」という優しい風切り音
             playFluffSound() {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
                 if (now - this.lastFluffTime < 0.09) return;
                 this.lastFluffTime = now;
@@ -390,7 +431,7 @@
 
             // ④ 側根（ひげ根）が「プチッ」と外れる音
             playRootletPop() {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
@@ -410,7 +451,7 @@
 
             // ⑤ 根の先端まで抜けた時の「スポッ！＋ファンファーレ」
             playUprootSuccess() {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
 
                 // コルク抜きのような「スポッ！」スイープ
@@ -446,7 +487,7 @@
 
             // ⑥ じょうろのシャワー水音
             playWaterSound() {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
                 if (now - this.lastWaterTime < 0.045) return;
                 this.lastWaterTime = now;
@@ -470,8 +511,10 @@
 
             // ⑦ くさぬきフォークで土をザクッと掘る音
             playForkSound() {
-                this.unlock();
+                if (!this.ensure()) return;
                 const now = this.ctx.currentTime;
+                if (now - this.lastForkTime < 0.07) return;
+                this.lastForkTime = now;
                 const src = this.ctx.createBufferSource();
                 src.buffer = this.noiseBuf;
 
@@ -488,6 +531,27 @@
                 filter.connect(gain);
                 gain.connect(this.ctx.destination);
                 src.start(now, Math.random() * 0.5, 0.14);
+            }
+
+            // ⑧ 残った根から芽が伸びる「ポロロン」というやさしい上昇音
+            playRegrowSound() {
+                if (!this.ensure()) return;
+                const now = this.ctx.currentTime;
+                const notes = [392.00, 493.88, 587.33, 783.99];
+                notes.forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    const t0 = now + idx * 0.16;
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, t0);
+                    g.gain.setValueAtTime(0.0001, t0);
+                    g.gain.linearRampToValueAtTime(0.12, t0 + 0.03);
+                    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.5);
+                    osc.connect(g);
+                    g.connect(this.ctx.destination);
+                    osc.start(t0);
+                    osc.stop(t0 + 0.52);
+                });
             }
         }
 
@@ -573,12 +637,40 @@
 
         const STORAGE_KEY = 'dandelion_sim_save_v2';
 
+        const HISTORY_LIMIT = 30;
+        const RANKS = ['SSS', 'S', 'A', 'B', 'C'];
+
+        function toFiniteNumber(v, fallback = 0) {
+            const n = Number(v);
+            return Number.isFinite(n) && n >= 0 ? n : fallback;
+        }
+
+        // 壊れた・形の違う保存データでもゲームが止まらないよう、項目ごとに検証して補う
+        function sanitizeSaveData(d) {
+            const src = (d && typeof d === 'object' && !Array.isArray(d)) ? d : {};
+            const history = Array.isArray(src.history) ? src.history : [];
+            return {
+                pullCount: Math.floor(toFiniteNumber(src.pullCount)),
+                bestCm: toFiniteNumber(src.bestCm),
+                history: history
+                    .filter(h => h && typeof h === 'object')
+                    .map(h => ({
+                        name: typeof h.name === 'string' ? h.name.slice(0, 40) : '？',
+                        lengthCm: toFiniteNumber(h.lengthCm),
+                        isSuccess: h.isSuccess === true,
+                        rank: RANKS.includes(h.rank) ? h.rank : 'C',
+                        date: typeof h.date === 'string' ? h.date.slice(0, 20) : ''
+                    }))
+                    .slice(0, HISTORY_LIMIT)
+            };
+        }
+
         function loadSaveData() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) return JSON.parse(raw);
+                if (raw) return sanitizeSaveData(JSON.parse(raw));
             } catch (e) {}
-            return { pullCount: 0, bestCm: 0.0, history: [] };
+            return sanitizeSaveData(null);
         }
 
         function writeSaveData(data) {
@@ -588,6 +680,17 @@
         }
 
         const saveData = loadSaveData();
+
+        // 結果を1件記録する。別タブの記録を消さないよう、書く直前に保存済みの内容を読み直してから追記する
+        function recordResult(entry) {
+            const fresh = loadSaveData();
+            if (entry.isSuccess) fresh.pullCount++;
+            if (entry.lengthCm > fresh.bestCm) fresh.bestCm = entry.lengthCm;
+            fresh.history.unshift(entry);
+            fresh.history.length = Math.min(fresh.history.length, HISTORY_LIMIT);
+            writeSaveData(fresh);
+            Object.assign(saveData, fresh);
+        }
 
         /**
          * ============================================================================
@@ -601,6 +704,13 @@
         let cw = 400;
         let ch = 450;
         let groundY = 216; // 常に canvasHeight * 0.48 に設定（空48% / 地下52%）
+        let dpr = 1;       // 高解像度画面向けのキャンバス倍率
+
+        const STEP_MS = 1000 / 60;
+        const REBURY_DEPTH = 10;
+        const WATER_REACH = 110;       // じょうろの水が根の土にしみこむ、根元からの左右の範囲(px)       // 一度地上に出た根が、この深さより下へ押し戻されたら土に埋まった扱いに戻す     // 物理は 60 回/秒 の固定ステップで進める（画面のリフレッシュレートに左右されない）
+        const REGROW_STEPS = 150;      // 再生アニメーションの長さ（約2.5秒）
+        let resultTimer = null;        // リザルトカード表示までの待ちタイマー
 
         const state = {
             tool: 'hand',       // 'hand' | 'water' | 'fork'
@@ -614,10 +724,12 @@
                 down: false,
                 x: 0,
                 y: 0,
-                lastX: 0,
-                lastY: 0,
+                prevX: 0,        // 前の物理ステップでの位置（速度は1ステップあたりの移動量）
+                prevY: 0,
                 vx: 0,
-                vy: 0
+                vy: 0,
+                forkX: 0,        // くさぬきを最後に入れた位置
+                forkY: 0
             },
             // つかんでいる対象（タップしただけでは切れず、引っ張って距離が伸びると切れる）
             grabState: {
@@ -627,9 +739,12 @@
                 anchorX: 0,
                 anchorY: 0,
                 pullDist: 0,
-                snapThreshold: 68
+                snapThreshold: 68,
+                crownBaseX: 0,   // つかんだ瞬間の根元の位置（茎・葉を引くときの基準）
+                crownBaseY: 0
             },
             plant: null,
+            lastResult: null,    // 直近のリザルト（株が替わっても標本・再生に使えるよう控えておく）
             pebbles: [],
             clouds: [],
             critters: [],
@@ -669,7 +784,11 @@
         /**
          * たんぽぽ株の生成（画面の高さに合わせて花も根も絶対に枠外・UIに被らないようスケーリング）
          */
-        function spawnDandelion(speciesIndex = null, isRegrowth = false) {
+        function spawnDandelion(speciesIndex = null, isRegrowth = false, regrowFrom = -1) {
+            if (resultTimer !== null) {
+                clearTimeout(resultTimer);
+                resultTimer = null;
+            }
             state.finished = false;
             state.grabState.active = false;
             state.grabState.target = null;
@@ -806,11 +925,18 @@
                 nodes,
                 leaves,
                 stems,
-                brokenIndex: -1
+                brokenIndex: -1,
+                // 再生中は 0→1 に育つ。regrowFrom より上の根は新しく伸びる部分、下は土に残っていた根
+                growth: isRegrowth ? 0 : 1,
+                regrowFrom: isRegrowth ? Math.max(1, Math.min(numNodes - 1, regrowFrom)) : -1
             };
 
             document.getElementById('plantNameBadge').textContent = `🌼 ${sp.name}`;
-            setAdvice('💡 根元をつかんでユサユサ揺らすか、🚿じょうろ・⛏️くさぬきを使おう！');
+            if (isRegrowth) {
+                setAdvice('🌱 土に残った根っこから、新しい芽が伸びてきたよ…');
+            } else {
+                setAdvice('💡 根元をつかんでユサユサ揺らすか、🚿じょうろ・⛏️くさぬきを使おう！');
+            }
             syncHeaderUI();
         }
 
@@ -826,6 +952,22 @@
             const nodes = p.nodes;
             const crown = nodes[0];
             const g = state.grabState;
+
+            // ポインタ速度 = この物理ステップでの移動量（指を止めれば次のステップで 0 に戻る）
+            const ptr = state.pointer;
+            ptr.vx = ptr.x - ptr.prevX;
+            ptr.vy = ptr.y - ptr.prevY;
+            ptr.prevX = ptr.x;
+            ptr.prevY = ptr.y;
+
+            // 残った根からの再生アニメーション
+            if (p.growth < 1) {
+                p.growth = Math.min(1, p.growth + 1 / REGROW_STEPS);
+                if (p.growth >= 1) {
+                    setAdvice('🌱 また生えてきた！こんどは根っこの先まで抜いてみよう！');
+                }
+            }
+            const growthEase = 1 - Math.pow(1 - p.growth, 3);
 
             // 土の硬さ係数 (1.0 = 固い, 0.16 = 水分＆ほぐしで非常に柔らかい)
             const soilResistance = Math.max(0.15, 1.0 - (state.moisture * 0.42 + state.looseness * 0.45));
@@ -847,8 +989,8 @@
                     // 指の位置に向かって茎がベジェ曲線でしなり、根元クラウンも少し浮き上がる(2~6px)
                     stem.headX = stem.origHeadX + dx * 0.78;
                     stem.headY = stem.origHeadY + dy * 0.78;
-                    crown.x += ((cw * 0.5 + dx * 0.08) - crown.x) * 0.3;
-                    crown.y += (((groundY - 2) + Math.max(-6, Math.min(2, dy * 0.08))) - crown.y) * 0.3;
+                    crown.x += ((g.crownBaseX + dx * 0.08) - crown.x) * 0.3;
+                    crown.y += ((g.crownBaseY + Math.max(-6, Math.min(2, dy * 0.08))) - crown.y) * 0.3;
 
                     // 引っ張っている距離があるときだけ「ギギギ…」音
                     if (g.pullDist > 12) {
@@ -893,8 +1035,8 @@
 
                     leaf.pullOffsetX = dx * 0.72;
                     leaf.pullOffsetY = dy * 0.72;
-                    crown.x += ((cw * 0.5 + dx * 0.07) - crown.x) * 0.3;
-                    crown.y += (((groundY - 2) + Math.max(-5, Math.min(2, dy * 0.07))) - crown.y) * 0.3;
+                    crown.x += ((g.crownBaseX + dx * 0.07) - crown.x) * 0.3;
+                    crown.y += ((g.crownBaseY + Math.max(-5, Math.min(2, dy * 0.07))) - crown.y) * 0.3;
 
                     if (g.pullDist > 12) {
                         sfx.playStretchTick(state.tension);
@@ -957,8 +1099,9 @@
                     st.headY += st.vy;
                     st.vy += 0.36;
                 } else {
-                    const targetHX = crown.x + Math.cos(st.baseAng) * st.stemLen;
-                    const targetHY = crown.y + Math.sin(st.baseAng) * st.stemLen;
+                    const len = st.stemLen * growthEase;
+                    const targetHX = crown.x + Math.cos(st.baseAng) * len;
+                    const targetHY = crown.y + Math.sin(st.baseAng) * len;
                     st.origHeadX = targetHX;
                     st.origHeadY = targetHY;
                     if (!g.active || g.target !== st) {
@@ -994,12 +1137,15 @@
                 if (!node.attached) continue;
                 attachedNodes++;
 
+                // 地上に出たかどうかは毎ステップ位置から判定する（押し戻されて深く埋まれば、また土につかまれる）
                 if (node.y <= groundY) {
                     if (!node.extracted) {
                         node.extracted = true;
                         spawnParticle(node.x, groundY, '#78502b', 3, 'dirt');
                     }
                     extractedNodes++;
+                } else if (node.extracted && node.y > groundY + REBURY_DEPTH) {
+                    node.extracted = false;
                 }
 
                 const dx = parent.x - node.x;
@@ -1153,26 +1299,34 @@
             // じょうろの水滴
             if (state.pointer.down && state.tool === 'water' && !state.finished) {
                 sfx.playWaterSound();
+                // 地面より下を押しても、水は必ず地上の高さから降らせる
+                const spoutY = Math.min(state.pointer.y, groundY - 24);
                 for (let i = 0; i < 2; i++) {
                     state.waterDrops.push({
                         x: state.pointer.x - 10 + (Math.random() - 0.5) * 22,
-                        y: state.pointer.y + (Math.random() - 0.5) * 8,
+                        y: spoutY + (Math.random() - 0.5) * 8,
                         vx: -0.8 + (Math.random() - 0.5) * 1.5,
                         vy: 3.2 + Math.random() * 2
                     });
                 }
             }
 
+            const plantX = state.plant ? state.plant.nodes[0].x : cw * 0.5;
             for (let i = state.waterDrops.length - 1; i >= 0; i--) {
                 const w = state.waterDrops[i];
                 w.x += w.vx;
                 w.y += w.vy;
                 w.vy += 0.4;
                 if (w.y >= groundY + 4) {
-                    state.moisture = Math.min(1.0, state.moisture + 0.005);
                     state.waterDrops.splice(i, 1);
-                    if (state.moisture > 0.85) {
-                        setAdvice('💧 土にたっぷり水がしみこんで柔らかくなったよ！');
+                    // 株のまわり（根元から左右 WATER_REACH px 以内）に落ちた水だけが根の土にしみこむ
+                    if (Math.abs(w.x - plantX) <= WATER_REACH) {
+                        state.moisture = Math.min(1.0, state.moisture + 0.005);
+                        if (state.moisture > 0.85) {
+                            setAdvice('💧 土にたっぷり水がしみこんで柔らかくなったよ！');
+                        }
+                    } else if (!state.finished) {
+                        setAdvice('🚿 たんぽぽから離れすぎ！株の真上に水をかけよう！');
                     }
                 }
             }
@@ -1228,7 +1382,19 @@
          * 5. キャンバス描画処理（空・土壌断面・根っこ・葉・花・綿毛・白い汁・道具）
          * ============================================================================
          */
+        function easeGrowth(p) {
+            return 1 - Math.pow(1 - p.growth, 3);
+        }
+
+        // 再生中、新しく伸びる部分（regrowFrom より上の根）の太さ倍率
+        function rootGrowthScale(p, i) {
+            if (p.growth >= 1 || i >= p.regrowFrom) return 1;
+            return 0.25 + 0.75 * easeGrowth(p);
+        }
+
         function renderScene() {
+            // 論理座標(px)で描けるよう、devicePixelRatio 分だけ拡大してから描く
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.save();
             if (state.shake > 0) {
                 ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
@@ -1366,7 +1532,8 @@
             const nodes = p.nodes;
 
             // 側根（ひげ根）
-            nodes.forEach(n => {
+            nodes.forEach((n, i) => {
+                ctx.globalAlpha = rootGrowthScale(p, i) < 1 ? easeGrowth(p) : 1;
                 n.rootlets.forEach(rl => {
                     ctx.strokeStyle = rl.intact ? '#d6c19e' : '#a89070';
                     ctx.lineWidth = rl.intact ? 2.0 : 1.4;
@@ -1380,6 +1547,7 @@
                     ctx.stroke();
                 });
             });
+            ctx.globalAlpha = 1;
 
             // 太い主根
             for (let i = 0; i < nodes.length - 1; i++) {
@@ -1388,6 +1556,7 @@
                 if (!n2.attached && n1.attached) continue;
 
                 const tr = Math.min(1, n2.tensionRatio);
+                const gs = rootGrowthScale(p, i);
                 const jitter = tr > 0.35 ? (Math.random() - 0.5) * tr * 5 : 0;
                 const r = Math.round(228 + tr * 27);
                 const g = Math.round(208 - tr * 140);
@@ -1395,7 +1564,7 @@
 
                 // 外皮の輪郭
                 ctx.strokeStyle = `rgb(${Math.round(r * 0.55)}, ${Math.round(g * 0.48)}, ${Math.round(b * 0.40)})`;
-                ctx.lineWidth = (n1.radius + n2.radius) + 2.5;
+                ctx.lineWidth = (n1.radius + n2.radius) * gs + 2.5;
                 ctx.lineCap = 'round';
                 ctx.beginPath();
                 ctx.moveTo(n1.x + jitter, n1.y);
@@ -1404,7 +1573,7 @@
 
                 // 主根内部
                 ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
-                ctx.lineWidth = (n1.radius + n2.radius);
+                ctx.lineWidth = (n1.radius + n2.radius) * gs;
                 ctx.beginPath();
                 ctx.moveTo(n1.x + jitter, n1.y);
                 ctx.lineTo(n2.x + jitter, n2.y);
@@ -1414,6 +1583,7 @@
 
         function drawAboveGroundPlant(p) {
             const crown = p.nodes[0];
+            const ge = easeGrowth(p);
 
             // 1. ギザギザのロゼット葉（引っ張るとベジェ曲線でしなる）
             p.leaves.forEach(lf => {
@@ -1433,7 +1603,7 @@
                         Math.sin(lf.baseAng) * lf.len + lf.pullOffsetY
                     );
                     ctx.rotate(pullAng);
-                    drawSingleLeafShape(stretchLen, lf.width, lf.lobes, lf.col, 0, 0);
+                    drawSingleLeafShape(stretchLen * ge, lf.width * (0.35 + 0.65 * ge), lf.lobes, lf.col, 0, 0);
                 }
                 ctx.restore();
             });
@@ -1474,6 +1644,7 @@
 
                 // 花または綿毛の頭部描画
                 ctx.translate(st.headX, st.headY);
+                if (ge < 1) ctx.scale(ge, ge);
                 if (!st.isPuff) {
                     const rings = [
                         { cnt: 16, r: st.headRadius, col: p.sp.flowerColor },
@@ -1651,42 +1822,59 @@
             };
         }
 
-        function onPointerDown(clientX, clientY) {
-            sfx.unlock();
-            const pos = getCanvasCoords(clientX, clientY);
+        function startGrab(type, target, pos, snapThreshold) {
+            const g = state.grabState;
+            const crown = state.plant.nodes[0];
+            g.active = true;
+            g.type = type;
+            g.target = target;
+            g.anchorX = pos.x;
+            g.anchorY = pos.y;
+            g.pullDist = 0;
+            g.snapThreshold = snapThreshold;
+            g.crownBaseX = crown.x;
+            g.crownBaseY = crown.y;
+        }
+
+        // pos はキャンバス上の座標（マウス・タッチ・キーボード共通）
+        function onPointerDown(pos) {
             state.pointer.down = true;
             state.pointer.x = pos.x;
             state.pointer.y = pos.y;
-            state.pointer.lastX = pos.x;
-            state.pointer.lastY = pos.y;
+            state.pointer.prevX = pos.x;
+            state.pointer.prevY = pos.y;
             state.pointer.vx = 0;
             state.pointer.vy = 0;
+            state.pointer.forkX = pos.x;
+            state.pointer.forkY = pos.y;
 
-            // ミミズ・ダンゴムシのタップ反応
-            const underH = ch - groundY;
-            state.critters.forEach(cr => {
-                const cx = cr.rx * cw;
-                const cy = groundY + cr.ry * underH;
-                if (Math.hypot(pos.x - cx, pos.y - cy) < 34) {
-                    if (cr.type === 'worm') cr.boost = 1.5;
-                    else cr.curled = 1.0;
-                    sfx.playRootletPop();
-                }
-            });
+            // ミミズ・ダンゴムシのタップ反応（土のなかが見えているときだけ）
+            if (state.xray) {
+                const underH = ch - groundY;
+                state.critters.forEach(cr => {
+                    const cx = cr.rx * cw;
+                    const cy = groundY + cr.ry * underH;
+                    if (Math.hypot(pos.x - cx, pos.y - cy) < 34) {
+                        if (cr.type === 'worm') cr.boost = 1.5;
+                        else cr.curled = 1.0;
+                        sfx.playRootletPop();
+                    }
+                });
+            }
 
             if (state.finished || !state.plant) return;
             const p = state.plant;
             const crown = p.nodes[0];
 
             if (state.tool === 'hand') {
+                if (p.growth < 1) {
+                    setAdvice('🌱 いま芽が伸びているところ。育ちきるまで待ってね！');
+                    return;
+                }
+
                 // ① 根元（クラウン）を優先判定（半径34px以内）
                 if (Math.hypot(pos.x - crown.x, pos.y - crown.y) <= 34) {
-                    state.grabState.active = true;
-                    state.grabState.type = 'crown';
-                    state.grabState.target = crown;
-                    state.grabState.anchorX = pos.x;
-                    state.grabState.anchorY = pos.y;
-                    state.grabState.pullDist = 0;
+                    startGrab('crown', crown, pos, 68);
                     setAdvice('✊ 根元をキャッチ！左右にユサユサ揺らしながら真上に引っぱろう！');
                     return;
                 }
@@ -1698,13 +1886,7 @@
                     const midY = (crown.y + st.headY) * 0.5;
                     if (Math.hypot(pos.x - st.headX, pos.y - st.headY) <= 32 ||
                         Math.hypot(pos.x - midX, pos.y - midY) <= 24) {
-                        state.grabState.active = true;
-                        state.grabState.type = 'stem';
-                        state.grabState.target = st;
-                        state.grabState.anchorX = pos.x;
-                        state.grabState.anchorY = pos.y;
-                        state.grabState.pullDist = 0;
-                        state.grabState.snapThreshold = 68;
+                        startGrab('stem', st, pos, 68);
                         setAdvice('🖐️ 花・綿毛をつかんだよ。引っぱるとしなり、強く引きすぎるとちぎれるよ！');
                         return;
                     }
@@ -1716,13 +1898,7 @@
                     const tipX = crown.x + Math.cos(lf.baseAng) * (lf.len * 0.72);
                     const tipY = crown.y + Math.sin(lf.baseAng) * (lf.len * 0.72);
                     if (Math.hypot(pos.x - tipX, pos.y - tipY) <= 34) {
-                        state.grabState.active = true;
-                        state.grabState.type = 'leaf';
-                        state.grabState.target = lf;
-                        state.grabState.anchorX = pos.x;
-                        state.grabState.anchorY = pos.y;
-                        state.grabState.pullDist = 0;
-                        state.grabState.snapThreshold = 65;
+                        startGrab('leaf', lf, pos, 65);
                         setAdvice('🖐️ 葉っぱをつかんだよ。強く引っぱるとちぎれるから根元を持ち直そう！');
                         return;
                     }
@@ -1732,17 +1908,16 @@
             }
         }
 
-        function onPointerMove(clientX, clientY) {
-            const pos = getCanvasCoords(clientX, clientY);
-            state.pointer.vx = pos.x - state.pointer.lastX;
-            state.pointer.vy = pos.y - state.pointer.lastY;
-            state.pointer.lastX = state.pointer.x;
-            state.pointer.lastY = state.pointer.y;
+        // 位置だけ記録する。速度は物理ステップごとに updateSimulation で求める
+        function onPointerMove(pos) {
             state.pointer.x = pos.x;
             state.pointer.y = pos.y;
 
             if (!state.pointer.down || state.finished) return;
-            if (state.tool === 'fork' && Math.hypot(state.pointer.vx, state.pointer.vy) > 5) {
+            // くさぬきは、前に入れた位置から 5px 以上動かすたびにもう一度入れる
+            if (state.tool === 'fork' && Math.hypot(pos.x - state.pointer.forkX, pos.y - state.pointer.forkY) > 5) {
+                state.pointer.forkX = pos.x;
+                state.pointer.forkY = pos.y;
                 applyWeedingFork(pos.x, pos.y);
             }
         }
@@ -1787,70 +1962,83 @@
             const p = state.plant;
             let lenPx = 0;
             for (let i = 1; i < extractedCount; i++) lenPx += p.nodes[i].restLen;
-            const lengthCm = Math.max(1.5, +(lenPx * 0.12).toFixed(1));
-
-            if (isSuccess) {
-                saveData.pullCount++;
-            }
-            if (lengthCm > saveData.bestCm) {
-                saveData.bestCm = lengthCm;
-            }
+            // 1節目で切れたときは地上に出た根がないので 0cm
+            const lengthCm = +(lenPx * 0.12).toFixed(1);
 
             let rank = 'C';
             if (isSuccess) {
                 rank = lengthCm >= 25 ? 'SSS' : (lengthCm >= 18 ? 'S' : 'A');
             } else {
-                rank = extractedCount / p.nodes.length > 0.6 ? 'B' : 'C';
+                // 根の全長（ノード間の区間数）のうち、地上に出た割合
+                const extractedRatio = (extractedCount - 1) / (p.nodes.length - 1);
+                rank = extractedRatio > 0.6 ? 'B' : 'C';
             }
 
-            saveData.history.unshift({
+            recordResult({
                 name: p.sp.name,
                 lengthCm,
                 isSuccess,
                 rank,
                 date: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
             });
-            if (saveData.history.length > 30) saveData.history.pop();
-            writeSaveData(saveData);
             syncHeaderUI();
 
-            setTimeout(() => {
-                const modal = document.getElementById('resultModal');
-                const badge = document.getElementById('resultBadge');
-                const title = document.getElementById('resultTitle');
-                const sub = document.getElementById('resultSub');
-                const regrowBtn = document.getElementById('regrowBtn');
+            // カードが出るまでに株が替わっても正しく描けるよう、標本と再生に必要な情報を控えておく
+            const result = {
+                speciesIndex: Math.max(0, SPECIES.indexOf(p.sp)),
+                radii: p.nodes.map(n => n.radius),
+                extractedCount,
+                isSuccess,
+                lengthCm,
+                rank
+            };
+            state.lastResult = result;
 
-                if (isSuccess) {
-                    badge.textContent = '✨ スポッと かんぜん勝利！ ✨';
-                    badge.className = 'bg-amber-400 text-amber-950 font-extrabold px-4 py-1 rounded-full text-sm sm:text-base shadow mb-1.5';
-                    title.textContent = 'ねっこの先まで ぬけた！';
-                    sub.textContent = 'しっぽの先端までキレイに抜けたよ！もう再生してこないね！';
-                    regrowBtn.classList.add('hidden');
-                } else {
-                    badge.textContent = '💥 ブチッ！ とちゅうで切れた…';
-                    badge.className = 'bg-rose-600 text-white font-extrabold px-4 py-1 rounded-full text-sm sm:text-base shadow mb-1.5';
-                    title.textContent = '土に ねっこがのこった！';
-                    sub.textContent = '残った根っこから、また新しいたんぽぽの葉が再生してくるよ！';
-                    regrowBtn.classList.remove('hidden');
-                }
-
-                document.getElementById('resultLenText').textContent = `${lengthCm.toFixed(1)} cm`;
-                document.getElementById('resultRankBadge').textContent = `ランク ${rank}`;
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                drawSpecimenCanvas(extractedCount, isSuccess);
+            if (resultTimer !== null) clearTimeout(resultTimer);
+            resultTimer = setTimeout(() => {
+                resultTimer = null;
+                showResultModal(result);
             }, 550);
         }
 
-        function drawSpecimenCanvas(extractedCount, isSuccess) {
+        function showResultModal(result) {
+            const badge = document.getElementById('resultBadge');
+            const title = document.getElementById('resultTitle');
+            const sub = document.getElementById('resultSub');
+            const regrowBtn = document.getElementById('regrowBtn');
+
+            if (result.isSuccess) {
+                badge.textContent = '✨ スポッと かんぜん勝利！ ✨';
+                badge.className = 'bg-amber-400 text-amber-950 font-extrabold px-4 py-1 rounded-full text-sm sm:text-base shadow mb-1.5';
+                title.textContent = 'ねっこの先まで ぬけた！';
+                sub.textContent = 'しっぽの先端までキレイに抜けたよ！もう再生してこないね！';
+                regrowBtn.classList.add('hidden');
+            } else {
+                badge.textContent = '💥 ブチッ！ とちゅうで切れた…';
+                badge.className = 'bg-rose-600 text-white font-extrabold px-4 py-1 rounded-full text-sm sm:text-base shadow mb-1.5';
+                title.textContent = '土に ねっこがのこった！';
+                sub.textContent = '残った根っこから、また新しいたんぽぽの葉が再生してくるよ！';
+                regrowBtn.classList.remove('hidden');
+            }
+
+            document.getElementById('resultLenText').textContent = `${result.lengthCm.toFixed(1)} cm`;
+            document.getElementById('resultRankBadge').textContent = `ランク ${result.rank}`;
+            openModal('resultModal', 'modalNextBtn');
+            drawSpecimenCanvas(result);
+        }
+
+        function drawSpecimenCanvas(result) {
             const sc = document.getElementById('specimenCanvas');
             const sctx = sc.getContext('2d');
-            sc.width = sc.clientWidth || 280;
-            sc.height = sc.clientHeight || 140;
-            sctx.clearRect(0, 0, sc.width, sc.height);
+            const w = sc.clientWidth || 280;
+            const h = sc.clientHeight || 140;
+            const sdpr = Math.min(3, window.devicePixelRatio || 1);
+            sc.width = Math.round(w * sdpr);
+            sc.height = Math.round(h * sdpr);
+            sctx.setTransform(sdpr, 0, 0, sdpr, 0, 0);
+            sctx.clearRect(0, 0, w, h);
 
-            const cx = sc.width * 0.36;
+            const cx = w * 0.36;
             const topY = 30;
 
             sctx.fillStyle = '#4caf50';
@@ -1864,13 +2052,13 @@
                 sctx.restore();
             }
 
-            const p = state.plant;
-            const availH = sc.height - topY - 14;
-            const stepY = availH / p.nodes.length;
+            const radii = result.radii;
+            const availH = h - topY - 14;
+            const stepY = availH / radii.length;
 
-            for (let i = 0; i < extractedCount - 1; i++) {
+            for (let i = 0; i < result.extractedCount - 1; i++) {
                 sctx.strokeStyle = '#e5d3b3';
-                sctx.lineWidth = Math.max(1.5, p.nodes[i].radius * 0.85);
+                sctx.lineWidth = Math.max(1.5, radii[i] * 0.85);
                 sctx.lineCap = 'round';
                 sctx.beginPath();
                 sctx.moveTo(cx, topY + i * stepY);
@@ -1878,40 +2066,75 @@
                 sctx.stroke();
             }
 
+            // ラベルは右下の「ぬけた長さ」表示にかからない高さまでに収め、根の先へ引き出し線を引く
+            const tipY = topY + Math.max(0, result.extractedCount - 1) * stepY;
+            const labelY = Math.min(tipY, h - 62);
             sctx.font = 'bold 11px "M PLUS Rounded 1c"';
-            if (isSuccess) {
-                sctx.fillStyle = '#fde047';
-                sctx.fillText('✨ 先端まで完全抜き！', cx + 16, topY + (extractedCount - 1) * stepY);
-            } else {
-                sctx.fillStyle = '#f87171';
-                sctx.fillText('✂️ ここでブチッ！', cx + 16, topY + (extractedCount - 1) * stepY);
+            sctx.fillStyle = result.isSuccess ? '#fde047' : '#f87171';
+            sctx.strokeStyle = sctx.fillStyle;
+            if (labelY < tipY) {
+                sctx.lineWidth = 1;
+                sctx.beginPath();
+                sctx.moveTo(cx + 6, tipY);
+                sctx.lineTo(cx + 14, labelY - 4);
+                sctx.stroke();
             }
+            sctx.fillText(result.isSuccess ? '✨ 先端まで完全抜き！' : '✂️ ここでブチッ！', cx + 16, labelY);
+        }
+
+        // ヘッダー表示は値が変わったときだけ書き換える（毎フレームの DOM 書き込みを避ける）
+        const headerEls = {
+            pullCount: document.getElementById('pullCountText'),
+            best: document.getElementById('bestRecordText'),
+            moisturePct: document.getElementById('moisturePct'),
+            moistureBar: document.getElementById('moistureBar'),
+            loosenPct: document.getElementById('loosenPct'),
+            loosenBar: document.getElementById('loosenBar'),
+            tensionPct: document.getElementById('tensionPct'),
+            tensionBar: document.getElementById('tensionBar')
+        };
+        const headerCache = {};
+
+        function setIfChanged(key, value, apply) {
+            if (headerCache[key] === value) return;
+            headerCache[key] = value;
+            apply(value);
         }
 
         function syncHeaderUI() {
-            document.getElementById('pullCountText').textContent = saveData.pullCount;
-            document.getElementById('bestRecordText').textContent = saveData.bestCm.toFixed(1);
-
             const mPct = Math.round(state.moisture * 100);
             const lPct = Math.round(state.looseness * 100);
             const tPct = Math.round(state.tension * 100);
 
-            document.getElementById('moisturePct').textContent = `${mPct}%`;
-            document.getElementById('moistureBar').style.width = `${mPct}%`;
-            document.getElementById('loosenPct').textContent = `${lPct}%`;
-            document.getElementById('loosenBar').style.width = `${lPct}%`;
-            document.getElementById('tensionPct').textContent = `${tPct}%`;
-
-            const tBar = document.getElementById('tensionBar');
-            tBar.style.width = `${tPct}%`;
-            tBar.className = tPct > 72
+            setIfChanged('pullCount', String(saveData.pullCount), v => { headerEls.pullCount.textContent = v; });
+            setIfChanged('best', saveData.bestCm.toFixed(1), v => { headerEls.best.textContent = v; });
+            setIfChanged('moisture', mPct, v => {
+                headerEls.moisturePct.textContent = `${v}%`;
+                headerEls.moistureBar.style.width = `${v}%`;
+            });
+            setIfChanged('loosen', lPct, v => {
+                headerEls.loosenPct.textContent = `${v}%`;
+                headerEls.loosenBar.style.width = `${v}%`;
+            });
+            setIfChanged('tension', tPct, v => {
+                headerEls.tensionPct.textContent = `${v}%`;
+                headerEls.tensionBar.style.width = `${v}%`;
+            });
+            const tClass = tPct > 72
                 ? 'bg-rose-500 h-full gauge-fill'
                 : (tPct > 40 ? 'bg-amber-400 h-full gauge-fill' : 'bg-emerald-400 h-full gauge-fill');
+            setIfChanged('tensionClass', tClass, v => { headerEls.tensionBar.className = v; });
         }
 
         function setAdvice(msg) {
             const el = document.getElementById('advice-banner');
             if (el.textContent !== msg) el.textContent = msg;
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
         }
 
         function renderZukanList() {
@@ -1923,110 +2146,341 @@
             box.innerHTML = saveData.history.map(item => `
                 <div class="bg-white rounded-xl p-2.5 shadow-xs border ${item.isSuccess ? 'border-amber-400' : 'border-slate-300'} flex justify-between items-center">
                     <div>
-                        <div class="text-xs sm:text-sm font-extrabold text-amber-950">${item.isSuccess ? '🏆' : '🌱'} ${item.name}</div>
+                        <div class="text-xs sm:text-sm font-extrabold text-amber-950">${item.isSuccess ? '🏆' : '🌱'} ${escapeHtml(item.name)}</div>
                         <div class="text-[10px] font-bold ${item.isSuccess ? 'text-emerald-600' : 'text-rose-600'}">
-                            ${item.isSuccess ? '先端まで完全抜き！' : '途中で切れた'} (${item.date})
+                            ${item.isSuccess ? '先端まで完全抜き！' : '途中で切れた'} (${escapeHtml(item.date)})
                         </div>
                     </div>
                     <div class="text-right">
                         <div class="text-sm sm:text-base font-extrabold text-amber-900">${item.lengthCm.toFixed(1)} cm</div>
-                        <div class="text-[10px] font-bold text-slate-500">ランク ${item.rank}</div>
+                        <div class="text-[10px] font-bold text-slate-500">ランク ${escapeHtml(item.rank)}</div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // キャンバスリサイズ処理（#canvas-wrapper の実サイズに厳密に合わせる）
+        /**
+         * ダイアログ（リザルト・図鑑・コツ）の開け閉め
+         * 開いている間は後ろの画面を inert にしてフォーカスが外へ出ないようにし、Esc と背景クリックで閉じる
+         */
+        const appRegions = ['top-header', 'canvas-wrapper', 'bottom-bar'].map(id => document.getElementById(id));
+        const modalStack = [];
+
+        function setInert(el, on) {
+            el.inert = on;
+            if (on) el.setAttribute('aria-hidden', 'true');
+            else el.removeAttribute('aria-hidden');
+        }
+
+        function openModal(id, focusId) {
+            const modal = document.getElementById(id);
+            releaseInput();
+            if (!modalStack.some(m => m.id === id)) {
+                modalStack.forEach(m => setInert(document.getElementById(m.id), true));
+                modalStack.push({ id, returnFocus: document.activeElement });
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                appRegions.forEach(el => setInert(el, true));
+            }
+            const target = (focusId && document.getElementById(focusId)) || modal.querySelector('button:not(.hidden)');
+            if (target) target.focus();
+        }
+
+        function closeModal(id) {
+            const idx = modalStack.findIndex(m => m.id === id);
+            if (idx < 0) return;
+            const [entry] = modalStack.splice(idx, 1);
+            const modal = document.getElementById(id);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+
+            const top = modalStack[modalStack.length - 1];
+            if (top) {
+                setInert(document.getElementById(top.id), false);
+            } else {
+                appRegions.forEach(el => setInert(el, false));
+            }
+            const back = entry.returnFocus;
+            if (back && back.isConnected && back.focus && !back.closest('[inert]')) back.focus();
+        }
+
+        // 画面サイズが変わっても株は替えず、いまの株・演出を新しいプレイ領域に合わせて拡大縮小する
+        function rescaleScene(old) {
+            const skyOld = Math.max(85, old.groundY - 32);
+            const skyNew = Math.max(85, groundY - 32);
+            const underOld = Math.max(110, (old.ch - old.groundY) - 24);
+            const underNew = Math.max(110, (ch - groundY) - 24);
+            const sSky = skyNew / skyOld;
+            const sUnder = underNew / underOld;
+            const oldCx = old.cw * 0.5;
+            const newCx = cw * 0.5;
+
+            // 地上は空の高さの比、地下は地下の深さの比で、地面の線を基準に拡大縮小する
+            const mapInto = (obj, kx, ky) => {
+                const s = obj[ky] < old.groundY ? sSky : sUnder;
+                obj[kx] = newCx + (obj[kx] - oldCx) * s;
+                obj[ky] = groundY + (obj[ky] - old.groundY) * s;
+            };
+
+            const p = state.plant;
+            p.nodes.forEach(n => {
+                mapInto(n, 'x', 'y');
+                mapInto(n, 'origX', 'origY');
+                n.restLen *= sUnder;
+                n.rootlets.forEach(rl => {
+                    mapInto(rl, 'anchorX', 'anchorY');
+                    rl.len *= sUnder;
+                });
+            });
+            p.leaves.forEach(lf => {
+                lf.len *= sSky;
+                lf.pullOffsetX *= sSky;
+                lf.pullOffsetY *= sSky;
+                mapInto(lf, 'flyX', 'flyY');
+            });
+            p.stems.forEach(st => {
+                st.stemLen *= sSky;
+                st.headRadius = Math.min(20, st.headRadius * sSky);
+                mapInto(st, 'headX', 'headY');
+                mapInto(st, 'origHeadX', 'origHeadY');
+            });
+
+            const g = state.grabState;
+            mapInto(g, 'anchorX', 'anchorY');
+            mapInto(g, 'crownBaseX', 'crownBaseY');
+
+            const ptr = state.pointer;
+            mapInto(ptr, 'x', 'y');
+            mapInto(ptr, 'forkX', 'forkY');
+            ptr.prevX = ptr.x;
+            ptr.prevY = ptr.y;
+
+            [state.particles, state.sapDrops, state.waterDrops].forEach(list => {
+                list.forEach(o => mapInto(o, 'x', 'y'));
+            });
+        }
+
+        // キャンバスリサイズ処理（#canvas-wrapper の実サイズと devicePixelRatio に合わせる）
         function resizeCanvas() {
             const w = wrapper.clientWidth || window.innerWidth;
             const h = wrapper.clientHeight || Math.floor(window.innerHeight * 0.65);
+            const newDpr = Math.min(3, window.devicePixelRatio || 1);
+            if (state.plant && w === cw && h === ch && newDpr === dpr) return;
+
+            const old = { cw, ch, groundY };
             cw = w;
             ch = h;
-            canvas.width = cw;
-            canvas.height = ch;
+            dpr = newDpr;
+            canvas.width = Math.round(cw * dpr);
+            canvas.height = Math.round(ch * dpr);
             groundY = Math.floor(ch * 0.48);
+
+            if (state.plant) {
+                rescaleScene(old);
+            } else {
+                spawnDandelion();
+            }
+        }
+
+        /**
+         * 入力の受け付け
+         * Pointer Events で、最初に触れた1本の指（またはマウス・キーボード）だけを追う。ほかの指は無視する
+         */
+        let activePointerId = null;
+        let keyboardHeld = false;
+
+        function releaseInput() {
+            if (activePointerId !== null) {
+                const id = activePointerId;
+                activePointerId = null;
+                try {
+                    if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+                } catch (e) {}
+            }
+            keyboardHeld = false;
+            if (state.pointer.down) onPointerUp();
+        }
+
+        canvas.addEventListener('pointerdown', e => {
+            if (activePointerId !== null || keyboardHeld) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            activePointerId = e.pointerId;
+            try {
+                canvas.setPointerCapture(e.pointerId);
+            } catch (err) {}
+            sfx.unlock();
+            onPointerDown(getCanvasCoords(e.clientX, e.clientY));
+        });
+
+        canvas.addEventListener('pointermove', e => {
+            if (e.pointerId !== activePointerId) return;
+            onPointerMove(getCanvasCoords(e.clientX, e.clientY));
+        });
+
+        function onPointerEnd(e) {
+            if (e.pointerId !== activePointerId) return;
+            releaseInput();
+        }
+        canvas.addEventListener('pointerup', onPointerEnd);
+        canvas.addEventListener('pointercancel', onPointerEnd);
+        canvas.addEventListener('lostpointercapture', onPointerEnd);
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // 着信・通知・タブ切り替えなどで指の操作が途切れたら、つかみ・水やりを止める
+        window.addEventListener('blur', releaseInput);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) releaseInput();
+        });
+
+        // 音はユーザー操作の中でしか開始できない。ブラウザごとに認められるイベントが違うので、複数で再開を試みる
+        ['pointerup', 'touchend', 'click', 'keydown'].forEach(type => {
+            document.addEventListener(type, () => sfx.unlock(), { passive: true, capture: true });
+        });
+
+        // キーボード操作：1・2・3 で道具、スペース（Enter）を押している間だけ道具を使い、矢印キーで動かす
+        const KEY_TOOLS = { '1': 'hand', '2': 'water', '3': 'fork' };
+
+        function keyboardStartPos() {
+            const crown = state.plant ? state.plant.nodes[0] : { x: cw * 0.5, y: groundY };
+            if (state.tool === 'water') return { x: crown.x + 10, y: groundY - 70 };
+            if (state.tool === 'fork') return { x: crown.x + 30, y: groundY + 24 };
+            return { x: crown.x, y: crown.y };
+        }
+
+        canvas.addEventListener('keydown', e => {
+            if (KEY_TOOLS[e.key]) {
+                selectTool(KEY_TOOLS[e.key]);
+                return;
+            }
+            if (e.key === 'n' || e.key === 'N') {
+                nextPlant();
+                return;
+            }
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                if (e.repeat || keyboardHeld || activePointerId !== null) return;
+                keyboardHeld = true;
+                onPointerDown(keyboardStartPos());
+                return;
+            }
+            const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+            if (dirs[e.key]) {
+                e.preventDefault();
+                if (!keyboardHeld) return;
+                const step = e.shiftKey ? 2 : 6;
+                const [ux, uy] = dirs[e.key];
+                onPointerMove({
+                    x: Math.max(0, Math.min(cw, state.pointer.x + ux * step)),
+                    y: Math.max(0, Math.min(ch, state.pointer.y + uy * step))
+                });
+            }
+        });
+
+        canvas.addEventListener('keyup', e => {
+            if ((e.key === ' ' || e.key === 'Enter') && keyboardHeld) releaseInput();
+        });
+        canvas.addEventListener('blur', () => {
+            if (keyboardHeld) releaseInput();
+        });
+
+        const TOOL_ADVICE = {
+            hand: '🖐️ 地面スレスレの「根元」をつかんで左右に揺らしながら上へ引こう！',
+            water: '🚿 たんぽぽの上をドラッグして、水をたっぷりかけよう！',
+            fork: '⛏️ 根元のまわりの土をこすって、ザクザクほぐそう！'
+        };
+
+        function selectTool(tool) {
+            releaseInput();
+            state.tool = tool;
+            document.querySelectorAll('.tool-btn').forEach(b => {
+                const on = b.dataset.tool === tool;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            setAdvice(TOOL_ADVICE[tool]);
+        }
+
+        function nextPlant() {
+            closeModal('resultModal');
             spawnDandelion();
         }
 
-        // イベントリスナー登録
-        canvas.addEventListener('mousedown', e => onPointerDown(e.clientX, e.clientY));
-        window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY));
-        window.addEventListener('mouseup', onPointerUp);
-
-        canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            if (e.touches.length > 0) onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-
-        window.addEventListener('touchmove', e => {
-            if (e.touches.length > 0) onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-
-        window.addEventListener('touchend', onPointerUp);
-
         document.querySelectorAll('.tool-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                sfx.unlock();
-                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                state.tool = btn.dataset.tool;
-                if (state.tool === 'hand') setAdvice('🖐️ 地面スレスレの「根元」をつかんで左右に揺らしながら上へ引こう！');
-                if (state.tool === 'water') setAdvice('🚿 たんぽぽの上をドラッグして、水をたっぷりかけよう！');
-                if (state.tool === 'fork') setAdvice('⛏️ 根元のまわりの土をこすって、ザクザクほぐそう！');
-            });
+            btn.addEventListener('click', () => selectTool(btn.dataset.tool));
         });
 
-        document.getElementById('xrayToggleBtn').addEventListener('click', () => {
+        document.getElementById('xrayToggleBtn').addEventListener('click', e => {
             state.xray = !state.xray;
+            e.currentTarget.setAttribute('aria-pressed', state.xray ? 'true' : 'false');
             document.getElementById('xrayBtnLabel').textContent = state.xray ? '土のなか：みえる' : '土のなか：かくす';
         });
 
-        document.getElementById('nextDandelionBtn').addEventListener('click', () => {
-            sfx.unlock();
-            spawnDandelion();
-        });
+        document.getElementById('nextDandelionBtn').addEventListener('click', nextPlant);
+        document.getElementById('modalNextBtn').addEventListener('click', nextPlant);
 
-        document.getElementById('modalNextBtn').addEventListener('click', () => {
-            document.getElementById('resultModal').classList.add('hidden');
-            document.getElementById('resultModal').classList.remove('flex');
-            spawnDandelion();
-        });
-
+        // 残った根から再生：切れた位置より上の根と葉・花が、土に残った根からゆっくり伸びてくる
         document.getElementById('regrowBtn').addEventListener('click', () => {
-            document.getElementById('resultModal').classList.add('hidden');
-            document.getElementById('resultModal').classList.remove('flex');
-            const idx = SPECIES.indexOf(state.plant.sp);
-            spawnDandelion(idx >= 0 ? idx : 0, true);
-            sfx.playUprootSuccess();
-            setAdvice('🌱 土に残った根っこから、また新しいたんぽぽが再生したよ！');
+            const r = state.lastResult;
+            closeModal('resultModal');
+            if (!r || r.isSuccess) {
+                spawnDandelion();
+                return;
+            }
+            spawnDandelion(r.speciesIndex, true, r.extractedCount);
+            sfx.playRegrowSound();
         });
 
         document.getElementById('openZukanBtn').addEventListener('click', () => {
             renderZukanList();
-            document.getElementById('zukanModal').classList.remove('hidden');
-            document.getElementById('zukanModal').classList.add('flex');
+            openModal('zukanModal', 'closeZukanBtn');
         });
-        document.getElementById('closeZukanBtn').addEventListener('click', () => {
-            document.getElementById('zukanModal').classList.add('hidden');
-            document.getElementById('zukanModal').classList.remove('flex');
+        document.getElementById('closeZukanBtn').addEventListener('click', () => closeModal('zukanModal'));
+
+        document.getElementById('openHelpBtn').addEventListener('click', () => openModal('helpModal', 'closeHelpBtn'));
+        document.getElementById('closeHelpBtn').addEventListener('click', () => closeModal('helpModal'));
+
+        // 背景（カードの外）をクリック・タップで閉じる
+        ['resultModal', 'zukanModal', 'helpModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', e => {
+                if (e.target === e.currentTarget) closeModal(id);
+            });
         });
 
-        document.getElementById('openHelpBtn').addEventListener('click', () => {
-            document.getElementById('helpModal').classList.remove('hidden');
-            document.getElementById('helpModal').classList.add('flex');
-        });
-        document.getElementById('closeHelpBtn').addEventListener('click', () => {
-            document.getElementById('helpModal').classList.add('hidden');
-            document.getElementById('helpModal').classList.remove('flex');
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && modalStack.length > 0) {
+                e.preventDefault();
+                closeModal(modalStack[modalStack.length - 1].id);
+            }
         });
 
+        // 別のタブで記録が更新されたら、こちらの表示も合わせる
+        window.addEventListener('storage', e => {
+            if (e.key !== null && e.key !== STORAGE_KEY) return;
+            Object.assign(saveData, loadSaveData());
+            syncHeaderUI();
+            if (modalStack.some(m => m.id === 'zukanModal')) renderZukanList();
+        });
+
+        // サイズの変化は ResizeObserver で、devicePixelRatio の変化（ブラウザのズームなど）は resize で拾う。
+        // どちらも実際に変わったときだけ処理する
         window.addEventListener('resize', resizeCanvas);
         if (window.ResizeObserver) {
             new ResizeObserver(() => resizeCanvas()).observe(wrapper);
         }
 
-        function loop() {
-            updateSimulation();
+        // 描画は毎フレーム、物理は 1/60 秒ごとの固定ステップで進める
+        let lastFrameTime = null;
+        let stepAccumulator = 0;
+
+        function loop(now) {
+            if (lastFrameTime === null) lastFrameTime = now;
+            // タブ復帰などで間が空いても一気に進めすぎないよう、1フレームで進めるのは最大 0.25 秒分まで
+            stepAccumulator += Math.min(250, now - lastFrameTime);
+            lastFrameTime = now;
+            while (stepAccumulator >= STEP_MS) {
+                updateSimulation();
+                stepAccumulator -= STEP_MS;
+            }
             renderScene();
             requestAnimationFrame(loop);
         }
@@ -2034,7 +2488,7 @@
         window.onload = () => {
             initSceneObjects();
             resizeCanvas();
-            loop();
+            requestAnimationFrame(loop);
         };
     </script>
 </body>
